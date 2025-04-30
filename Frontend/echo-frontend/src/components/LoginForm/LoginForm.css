@@ -55,6 +55,13 @@
   font-size: 0.875rem;
 }
 
+.form-text {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
 .login-button {
   width: 100%;
   padding: 0.75rem;

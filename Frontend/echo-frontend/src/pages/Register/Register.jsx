@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import RegisterForm from '../../components/RegisterForm/RegisterForm';
+import { authAPI } from '../../services/api';
 import './Register.css';
 
 const Register = () => {
@@ -8,34 +9,38 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
+  // 页面加载时检查用户是否已登录，如果已登录则重定向到首页
+  useEffect(() => {
+    if (authAPI.isLoggedIn()) {
+      navigate('/');
+    }
+  }, [navigate]);
+  
   const handleRegister = async (formData) => {
     try {
       setError('');
       setLoading(true);
       
-      // 调用注册API
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
+      // 使用API服务调用注册
+      const data = await authAPI.register(formData);
       
-      const data = await response.json();
+      // 注册成功，显示消息
+      alert(data.message || 'Registration successful!');
       
-      if (!response.ok) {
-        // 如果响应不成功，抛出错误
-        throw new Error(data.message || 'Registration failed');
-      }
-      
-      // 注册成功
-      alert(data.message || 'Registration successful! Please login.');
+      // 跳转到登录页面
       navigate('/login');
     } catch (err) {
       // 设置错误信息
-      setError(err.message || 'An error occurred during registration');
       console.error('Registration error:', err);
+      
+      // 根据错误类型设置不同的错误消息
+      if (err.status === 400) {
+        setError(err.message || '请检查您的注册信息');
+      } else if (err.status === 409) {
+        setError('用户名或邮箱已存在');
+      } else {
+        setError(err.message || '注册失败，请稍后重试');
+      }
     } finally {
       setLoading(false);
     }

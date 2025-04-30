@@ -1,6 +1,7 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
+import logging
 
 # 用户关注关系（自引用多对多）
 followers = db.Table('followers',
@@ -38,10 +39,38 @@ class User(db.Model):
     )
     
     def set_password(self, password):
+        """生成密码哈希并存储"""
+        if not password:
+            logging.error("Attempt to set empty password")
+            raise ValueError("Password cannot be empty")
+        
+        # 使用Werkzeug的generate_password_hash生成安全的密码哈希
         self.password_hash = generate_password_hash(password)
+        logging.info(f"Password hash generated for user {self.username}: {self.password_hash[:15]}...")
         
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        """验证密码是否匹配"""
+        # 对输入进行验证
+        if not password:
+            logging.error(f"Empty password provided for user {self.username}")
+            return False
+            
+        if not self.password_hash:
+            logging.error(f"No password hash stored for user {self.username}")
+            return False
+        
+        # 使用Werkzeug的check_password_hash比较提供的密码和存储的哈希值    
+        result = check_password_hash(self.password_hash, password)
+        
+        if result:
+            logging.info(f"Password verification successful for user {self.username}")
+        else:
+            logging.warning(f"Password verification failed for user {self.username}")
+            # 记录密码哈希的类型和格式，但不记录完整哈希以保护安全
+            hash_type = self.password_hash.split('$')[0] if '$' in self.password_hash else 'unknown'
+            logging.info(f"User {self.username} has hash type: {hash_type}")
+            
+        return result
     
     def follow(self, user):
         if not self.is_following(user):

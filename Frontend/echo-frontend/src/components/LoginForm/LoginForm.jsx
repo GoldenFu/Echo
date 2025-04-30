@@ -49,6 +49,7 @@ const LoginForm = ({ onLogin }) => {
             className={errors.username ? 'error' : ''}
           />
           {errors.username && <div className="error-message">{errors.username}</div>}
+          <small className="form-text">Enter your username or email</small>
         </div>
         
         <div className="form-group">

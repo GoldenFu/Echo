@@ -3,6 +3,7 @@ from werkzeug.exceptions import BadRequest
 from app.models import User
 from app import db
 from app.services.auth_service import validate_registration_data, generate_tokens, token_required
+import logging
 
 class AuthController:
     """
@@ -79,8 +80,27 @@ class AuthController:
             user = User.query.filter_by(username=data['username']).first() or \
                 User.query.filter_by(email=data['username']).first()
             
-            # Validate user and password
-            if not user or not user.check_password(data['password']):
+            # Debug: Check if user exists
+            if not user:
+                logging.error(f"Login failed: No user found with username/email {data['username']}")
+                return jsonify({"status": "error", "message": "Invalid username or password"}), 401
+            
+            # Debug: Check if password_hash is set
+            if not user.password_hash:
+                logging.error(f"Login failed: User {user.username} has no password_hash set")
+                return jsonify({"status": "error", "message": "User account corrupted, please contact support"}), 500
+            
+            # Debug: Check password verification with input password
+            input_password = data['password']
+            logging.info(f"Attempting login for user {user.username} with password: {input_password[:1]}***")
+            
+            # Verify password
+            password_check_result = user.check_password(input_password)
+            logging.info(f"Password verification for user {user.username}: {password_check_result}")
+            
+            # Return error if password check fails
+            if not password_check_result:
+                logging.error(f"Login failed: Invalid password for user {user.username}")
                 return jsonify({"status": "error", "message": "Invalid username or password"}), 401
             
             # Generate tokens
@@ -105,6 +125,7 @@ class AuthController:
         except BadRequest:
             return jsonify({"status": "error", "message": "Invalid JSON data"}), 400
         except Exception as e:
+            logging.error(f"Login error: {str(e)}")
             return jsonify({"status": "error", "message": f"Server error: {str(e)}"}), 500
 
     @staticmethod

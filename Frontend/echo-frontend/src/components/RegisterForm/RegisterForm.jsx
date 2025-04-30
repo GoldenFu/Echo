@@ -4,6 +4,7 @@ import './RegisterForm.css';
 const RegisterForm = ({ onRegister }) => {
   const [formData, setFormData] = useState({
     username: '',
+    nickname: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -30,6 +31,11 @@ const RegisterForm = ({ onRegister }) => {
       newErrors.username = 'Username must be between 3-20 characters';
     } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
       newErrors.username = 'Username can only contain letters, numbers and underscores';
+    }
+    
+    // 昵称验证
+    if (!formData.nickname.trim()) {
+      newErrors.nickname = 'Nickname is required';
     }
     
     // 邮箱验证
@@ -86,6 +92,19 @@ const RegisterForm = ({ onRegister }) => {
           />
           {errors.username && <div className="error-message">{errors.username}</div>}
           <small className="form-text">3-20 characters, letters, numbers and underscores only</small>
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="nickname">Nickname</label>
+          <input
+            type="text"
+            id="nickname"
+            name="nickname"
+            value={formData.nickname}
+            onChange={handleChange}
+            className={errors.nickname ? 'error' : ''}
+          />
+          {errors.nickname && <div className="error-message">{errors.nickname}</div>}
         </div>
         
         <div className="form-group">

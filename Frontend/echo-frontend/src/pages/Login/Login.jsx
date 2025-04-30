@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import LoginForm from '../../components/LoginForm/LoginForm';
+import { authAPI } from '../../services/api';
 import './Login.css';
 
 const Login = () => {
@@ -8,51 +9,57 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
+  // 页面加载时检查用户是否已登录，如果已登录则重定向到首页
+  useEffect(() => {
+    // 检查localStorage中是否有有效的用户和令牌
+    if (authAPI.isLoggedIn()) {
+      navigate('/');
+    }
+  }, [navigate]);
+  
   const handleLogin = async (formData) => {
     try {
-      setError('');
+      setError(''); // 清除之前的错误
       setLoading(true);
       
-      // 模拟登录API调用
-      // 实际项目中将替换为真实的API调用
-      console.log('Login attempt:', formData);
+      // 使用API服务调用登录
+      const data = await authAPI.login(formData);
       
-      // 模拟登录成功
-      setTimeout(() => {
-        setLoading(false);
-        // 模拟登录成功，保存用户信息到本地
-        localStorage.setItem('user', JSON.stringify({
-          id: 1,
-          username: formData.username
-        }));
-        alert('Login successful!');
+      // 登录成功，保存用户信息和令牌
+      if (data.user) {
+        // 保存用户信息
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // 保存令牌
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
+        }
+        
+        if (data.refresh_token) {
+          localStorage.setItem('refresh_token', data.refresh_token);
+        }
+        
+        // 显示成功消息
+        alert(data.message || 'Login successful!');
+        
+        // 导航到首页
         navigate('/');
-      }, 1000);
-      
-      /* 
-      // 真实API调用示例
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+      } else {
+        throw new Error('User data not received from server');
       }
-      
-      // 登录成功，保存用户信息到本地
-      localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/');
-      */
-      
     } catch (err) {
-      setError(err.message || 'An error occurred during login');
+      // 处理错误
       console.error('Login error:', err);
+      
+      // 设置错误信息，确保显示友好的错误消息
+      if (err.status === 401) {
+        setError('Invalid username or password');
+      } else if (err.status === 400) {
+        setError('Please provide username and password');
+      } else {
+        setError(err.message || 'Login failed, please try again later');
+      }
+    } finally {
       setLoading(false);
     }
   };
