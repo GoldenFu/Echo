@@ -137,18 +137,65 @@ export const authAPI = {
  */
 export const userAPI = {
   // 获取当前用户信息
-  getCurrentUser: () => {
-    return apiRequest('/users/me', {
-      method: 'GET'
-    });
+  getCurrentUser: async () => {
+    try {
+      return await apiRequest('/auth/me', {
+        method: 'GET'
+      });
+    } catch (error) {
+      console.error('获取用户信息失败:', error);
+      if (error.status === 401) {
+        throw new Error('未授权访问，请先登录');
+      } else if (error.status === 404) {
+        throw new Error('用户未找到');
+      } else {
+        throw new Error('获取用户信息失败: ' + (error.message || '未知错误'));
+      }
+    }
   },
   
   // 更新用户信息
-  updateProfile: (userData) => {
-    return apiRequest('/users/update', {
-      method: 'PUT',
-      body: JSON.stringify(userData)
-    });
+  updateProfile: async (userData) => {
+    try {
+      const response = await apiRequest('/auth/update-profile', {
+        method: 'PUT',
+        body: JSON.stringify(userData)
+      });
+      
+      // 更新本地存储的用户信息
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('更新用户信息失败:', error);
+      throw error;
+    }
+  },
+  
+  // 上传头像
+  uploadAvatar: async (formData) => {
+    const accessToken = localStorage.getItem('access_token');
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/upload-avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: formData
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        const error = new Error(data.message || 'Upload failed');
+        error.status = response.status;
+        throw error;
+      }
+      return data;
+    } catch (error) {
+      console.error('Avatar upload failed:', error);
+      throw error;
+    }
   }
 };
 

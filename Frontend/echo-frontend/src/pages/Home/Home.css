@@ -1,3 +1,40 @@
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* 防止内容溢出 */
+.MuiGrid-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+.MuiGrid-item {
+  max-width: 100%;
+}
+
+/* 移除feed-container相关样式，使用Container组件代替 */
+
+@media (min-width: 900px) {
+  .MuiContainer-root {
+    max-width: 1100px !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  .MuiContainer-root {
+    max-width: 1200px !important;
+  }
+}
+
 .home-page {
   min-height: 100vh;
   background-color: #f8f9fa;
@@ -163,4 +200,4 @@
 
 .error a:hover {
   color: #0056b3;
-} 
+}
